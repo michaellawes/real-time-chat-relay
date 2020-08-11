@@ -348,7 +348,7 @@ const ActionsModal = (props: ActionsModalProps ) => {
   };
 
   // Handles leaving voice channel in server
-  const handleLeaveVoiceChannel = async() => {
+  const handleLeaveVoiceChannel = () => {
     try {
       if(activeVoice !== selectedVoiceChannel) {
         handleSnackMessage(`Cannot leave from a call you are not in`, false);

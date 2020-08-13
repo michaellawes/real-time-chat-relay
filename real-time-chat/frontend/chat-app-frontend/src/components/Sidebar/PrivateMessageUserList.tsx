@@ -34,7 +34,7 @@ const PrivateMessageUserList = () => {
   return (
     <div className="channels-container">
       <List className="channel-list">
-        <ListItem className="title-container">Thndr Users</ListItem>
+        <ListItem className="title-container">Roomates</ListItem>
         {userList.map((userItem: any, i: number) => (
           <Slide direction="right" in={true} timeout={200 * (i + 1)} key={i}>
             <ListItem button className="user-item" onClick={() => dispatch(changePMUser(userItem))}>

@@ -5,7 +5,8 @@
     "main": "index.ts",
     "scripts": {
         "start": "ts-node server.ts",
-        "populate": "ts-node populate.ts"
+        "populate": "ts-node populate.ts",
+        "babel": "babel ./src --out-dir build --extensions .ts"
     },
     "keywords": [
         "Node",
@@ -17,7 +18,16 @@
     "author": "Michael Lawes",
     "license": "ISC",
     "dependencies": {
+        "@babel/plugin-proposal-class-properties": "^7.10.4",
+        "@babel/plugin-proposal-decorators": "^7.10.5",
+        "@babel/plugin-proposal-object-rest-spread": "^7.11.0",
+        "@babel/preset-env": "^7.11.0",
+        "@babel/preset-typescript": "^7.10.4",
         "@types/node": "^14.0.5",
+        "babel-core": "^6.26.3",
+        "babel-loader": "^8.1.0",
+        "babel-plugin-decorator-metadata": "^0.3.0",
+        "babel-plugin-transform-typescript-metadata": "^0.3.0",
         "bcryptjs": "^2.4.3",
         "body-parser": "^1.19.0",
         "cookie-parser": "^1.4.5",
@@ -32,6 +42,7 @@
         "morgan": "^1.10.0",
         "pug": "^3.0.0",
         "serve-favicon": "^2.5.0",
-        "socket.io": "^2.3.0"
+        "socket.io": "^2.3.0",
+        "validator": "^13.1.1"
     }
 }

@@ -2,19 +2,19 @@ export { };
 var mongoose = require("mongoose");
 var Schema = mongoose.Schema;
 
-const ThndrChannel = new Schema({
-  serverId: {
+const Channel = new Schema({
+  roomID: {
     type: String,
     required: true,
   },
-  channelId: {
+  channelID: {
     type: String,
     required: true,
   },
-  channelName: {
+  name: {
     type: String,
     required: true,
   },
 });
 
-module.exports = mongoose.model('ThndrChannel', ThndrChannel, 'ThndrChannels');
+module.exports = mongoose.model('Channel', Channel, 'Channels');

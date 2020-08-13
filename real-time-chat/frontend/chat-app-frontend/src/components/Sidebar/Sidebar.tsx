@@ -5,7 +5,7 @@ import { Dialog } from '@material-ui/core';
 import SnackBarContent from '../SnackBar/SnackBarContent';
 import PrivateMessageUserList from './PrivateMessageUserList';
 import ChannelList from './ChannelList';
-import ServerList from './ServerList';
+import RoomList from './RoomList';
 import ActionsModal from '../ActionsModal/ActionsModal';
 import { refreshData } from '../../actions';
 import { StoreState } from '../../reducers';
@@ -18,7 +18,7 @@ interface SidebarProps {
 const Sidebar = (props: SidebarProps) => {
   // Get from Redux Store
   const user = useSelector((state: StoreState) => state.user);
-  const { activeView, activeServer } = useSelector((state: StoreState) => state.chat);
+  const { activeView, activeRoom } = useSelector((state: StoreState) => state.chat);
   const dispatch = useDispatch();
 
   // Get props from parent (Used when Sidebar is rendered by header on mobile)
@@ -36,15 +36,15 @@ const Sidebar = (props: SidebarProps) => {
       setModalVisible(false);
       setSnackVisible(true);
       setSnackContent(response);
-      if (pass) dispatch(refreshData(user.username, activeServer));
+      if (pass) dispatch(refreshData(user.username, activeRoom));
     }
   };
   
 
   return (
     <div className="sidebar-container">
-      <ServerList setModalVisible={setModalVisible} setModalType={setModalType} />
-      {activeView === 'servers' ? (
+      <RoomList setModalVisible={setModalVisible} setModalType={setModalType} />
+      {activeView === 'rooms' ? (
         <ChannelList
           setDrawerVisible={setDrawerVisible}
           setModalVisible={setModalVisible}
@@ -56,8 +56,8 @@ const Sidebar = (props: SidebarProps) => {
       )}
       <Dialog
         open={modalVisible}
-        aria-labelledby="server create modal"
-        aria-describedby="create a server"
+        aria-labelledby="room create modal"
+        aria-describedby="create a room"
         className="modal-wrapper"
         onClose={() => setModalVisible(false)}
       >

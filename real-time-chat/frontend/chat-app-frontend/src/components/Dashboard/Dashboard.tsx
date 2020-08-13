@@ -16,7 +16,7 @@ import { StoreState } from '../../reducers';
 const Dashboard = () => {
   // Get state from Redux Store
   const user = useSelector((state: StoreState) => state.user);
-  const { activeServer } = useSelector((state: StoreState) => state.chat);
+  const { activeRoom } = useSelector((state: StoreState) => state.chat);
   const dispatch = useDispatch();
 
   // Local state
@@ -29,14 +29,14 @@ const Dashboard = () => {
   const activeStatusWrapper = useCallback(() => {
     const updateActiveStatus = () => {
       dispatch(updateActiveState());
-      if(activeServer !== '') {
-        dispatch(updateActiveUserList(activeServer.split('/', 2)[0]));
-        dispatch(updateUnactiveUserList(activeServer.split('/', 2)[0]));
+      if(activeRoom !== '') {
+        dispatch(updateActiveUserList(activeRoom.split('/', 2)[0]));
+        dispatch(updateUnactiveUserList(activeRoom.split('/', 2)[0]));
       } 
       setTimeout(updateActiveStatus, 5 * 60000);
     };
     updateActiveStatus();
-  }, [activeServer, dispatch]);
+  }, [activeRoom, dispatch]);
 
   // Listens for changes on isSignedIn
   useEffect(() => {
@@ -60,7 +60,7 @@ const Dashboard = () => {
       setModalVisible(false);
       setSnackVisible(true);
       setSnackContent(response);
-      if (pass) dispatch(refreshData(user.username, activeServer));
+      if (pass) dispatch(refreshData(user.username, activeRoom));
     }
   };
 

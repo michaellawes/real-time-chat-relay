@@ -3,8 +3,7 @@ export { };
 const connect = require('../db/db');
 
 // Models
-const User = require("../models/User.model");
-const DirectMessage = require("../models/DirectMessages.model");
+const { User, DirectMessage } = require('../models');
 
 // Check if DM exists
 export const dmExists = async (user1: string, user2: string) => {

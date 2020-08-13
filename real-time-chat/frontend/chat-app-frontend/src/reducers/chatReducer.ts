@@ -40,8 +40,8 @@ interface PrivateMessageInterface {
 };
 
 export interface ChatStore {
-  servers: {
-    [serverConjoined: string]: {
+  rooms: {
+    [roomConjoined: string]: {
       channels: {
         [channelConjoined: string]: { from: string; msgId: string; msg: string; timestamp: Date }[]; 
       };
@@ -53,7 +53,7 @@ export interface ChatStore {
   pms: {
     [userPM: string]: { from: string; userTo: string; msg: string; msgId: string; timestamp: Date; }[];
   };
-  activeServer: string;
+  activeRoom: string;
   activeChannel: string;
   activeVoice: string;
   currentMSG: string;
@@ -72,9 +72,9 @@ export interface ChatStore {
 };
 
 const initialState = {
-  servers: {},
+  rooms: {},
   pms: {},
-  activeServer: '',
+  activeRoom: '',
   activeChannel: '',
   activeVoice: '',
   currentMSG: '',
@@ -97,13 +97,13 @@ export const chatReducer = (state: ChatStore = initialState, action: ChatActionT
     case ACTION.RECEIVE_SOCKET_MESSAGE:
       return {
         ...state,
-        servers: {
-          ...state.servers,
-          [action.payload.server]: {
-            ...state.servers[action.payload.server],
+        rooms: {
+          ...state.rooms,
+          [action.payload.room]: {
+            ...state.rooms[action.payload.room],
             channels: {
-              ...state.servers[action.payload.server].channels,
-              [action.payload.channel]: [...state.servers[action.payload.server].channels[action.payload.channel], { from: action.payload.from, msgId: action.payload.msgId, msg: action.payload.msg, timestamp: action.payload.timestamp }]
+              ...state.rooms[action.payload.room].channels,
+              [action.payload.channel]: [...state.rooms[action.payload.room].channels[action.payload.channel], { from: action.payload.from, msgId: action.payload.msgId, msg: action.payload.msg, timestamp: action.payload.timestamp }]
             }
           }
         }
@@ -151,23 +151,23 @@ export const chatReducer = (state: ChatStore = initialState, action: ChatActionT
     case ACTION.ADD_CHANNEL:
       return {
         ...state,
-        servers: {
-          ...state.servers,
-          [action.payload.server]: {
-            ...state.servers[action.payload.server],
+        rooms: {
+          ...state.rooms,
+          [action.payload.room]: {
+            ...state.rooms[action.payload.room],
             channels: {
-              ...state.servers[action.payload.server].channels,
+              ...state.rooms[action.payload.room].channels,
               [action.payload.channel]: []
             },
           }
         }
       };
-    case ACTION.ADD_SERVER:
+    case ACTION.ADD_ROOM:
       return {
         ...state,
-        servers: {
-          ...state.servers,
-          [action.payload.server]: {
+        rooms: {
+          ...state.rooms,
+          [action.payload.room]: {
             channels: {
               [action.payload.channel]:  []
             },
@@ -180,12 +180,12 @@ export const chatReducer = (state: ChatStore = initialState, action: ChatActionT
     case ACTION.ADD_VOICE:
       return {
         ...state,
-        servers: {
-          ...state.servers,
-          [action.payload.server]: {
-            ...state.servers[action.payload.server],
+        rooms: {
+          ...state.rooms,
+          [action.payload.room]: {
+            ...state.rooms[action.payload.room],
             voiceChannels: {
-              ...state.servers[action.payload.server].voiceChannels,
+              ...state.rooms[action.payload.room].voiceChannels,
               [action.payload.voice]: {}
             }
           }
@@ -194,22 +194,22 @@ export const chatReducer = (state: ChatStore = initialState, action: ChatActionT
     case ACTION.GET_INITIAL_DATA:
       return {
         ...state,
-        servers: action.payload.servers,
+        rooms: action.payload.rooms,
         pms: action.payload.pms,
-        activeServer: Object.keys(action.payload.servers)[0],
-        activeChannel: Object.keys(action.payload.servers[Object.keys(action.payload.servers)[0]].channels)[0]
+        activeRoom: Object.keys(action.payload.rooms)[0],
+        activeChannel: Object.keys(action.payload.rooms[Object.keys(action.payload.rooms)[0]].channels)[0]
       };
     case ACTION.REFRESH_DATA:
       return {
         ...state,
-        servers: action.payload.servers,
+        rooms: action.payload.rooms,
         pms: action.payload.pms,
       };
-    case ACTION.CHANGE_SERVER:
+    case ACTION.CHANGE_ROOM:
       return {
         ...state,
-        activeServer: action.payload,
-        activeChannel: Object.keys(state.servers[action.payload].channels)[0],
+        activeRoom: action.payload,
+        activeChannel: Object.keys(state.rooms[action.payload].channels)[0],
       };
     case ACTION.CHANGE_CHANNEL:
       return { ...state, activeChannel: action.payload };
@@ -229,27 +229,27 @@ export const chatReducer = (state: ChatStore = initialState, action: ChatActionT
           }
         };
       };
-    case ACTION.RENAME_SERVER:
-      let prev = state.servers[state.activeServer];
-      delete state.servers[state.activeServer];
+    case ACTION.RENAME_ROOM:
+      let prev = state.rooms[state.activeRoom];
+      delete state.rooms[state.activeRoom];
       return { 
         ...state,
-        servers: {
+        rooms: {
           [action.payload]: prev
         },
-        activeServer: action.payload
+        activeRoom: action.payload
        };
     case ACTION.RENAME_CHANNEL:
-      let prev1 = state.servers[action.payload.server].channels[action.payload.channel];
-      delete state.servers[action.payload.server].channels[action.payload.channel];
+      let prev1 = state.rooms[action.payload.room].channels[action.payload.channel];
+      delete state.rooms[action.payload.room].channels[action.payload.channel];
       return { 
         ...state,
-        servers: {
-          ...state.servers,
-          [action.payload.server]: {
-            ...state.servers[action.payload.server],
+        rooms: {
+          ...state.rooms,
+          [action.payload.room]: {
+            ...state.rooms[action.payload.room],
             channels: {
-              ...state.servers[action.payload.server].channels,
+              ...state.rooms[action.payload.room].channels,
               [action.payload.channel]: prev1
             }
           }
@@ -257,16 +257,16 @@ export const chatReducer = (state: ChatStore = initialState, action: ChatActionT
         activeChannel: action.payload.channel 
       };
     case ACTION.RENAME_VOICE:
-      let prev2 = state.servers[action.payload.server].voiceChannels[action.payload.voice];
-      delete state.servers[action.payload.server].voiceChannels[action.payload.voice];
+      let prev2 = state.rooms[action.payload.room].voiceChannels[action.payload.voice];
+      delete state.rooms[action.payload.room].voiceChannels[action.payload.voice];
       return { 
         ...state,
-        servers: {
-          ...state.servers,
-          [action.payload.server]: {
-            ...state.servers[action.payload.server],
+        rooms: {
+          ...state.rooms,
+          [action.payload.room]: {
+            ...state.rooms[action.payload.room],
             voiceChannels: {
-              ...state.servers[action.payload.server].voiceChannels,
+              ...state.rooms[action.payload.room].voiceChannels,
               [action.payload.voice]: prev2
             }
           }
@@ -274,40 +274,40 @@ export const chatReducer = (state: ChatStore = initialState, action: ChatActionT
       };
     case ACTION.LEAVE_VOICE:
       return { ...state, activeVoice: '' };
-    case ACTION.DELETE_SERVER:
-      if(Object.keys(state.servers).length === 1) {
+    case ACTION.DELETE_ROOM:
+      if(Object.keys(state.rooms).length === 1) {
         return { 
           ...state,
-          servers: {},
-          activeServer: '',
+          rooms: {},
+          activeRoom: '',
           activeChannel: '',
           activeVoice: '',
         }
       } else {
-        delete state.servers[action.payload];
+        delete state.rooms[action.payload];
         return { 
           ...state,
-          activeServer: Object.keys(state.servers)[0],
-          activeChannel: Object.keys(state.servers[Object.keys(state.servers)[0]].channels)[0], 
+          activeRoom: Object.keys(state.rooms)[0],
+          activeChannel: Object.keys(state.rooms[Object.keys(state.rooms)[0]].channels)[0], 
           activeVoice: '' 
         };
       }
     case ACTION.DELETE_CHANNEL:
-      delete state.servers[action.payload.server].channels[action.payload.channel];
+      delete state.rooms[action.payload.room].channels[action.payload.channel];
       return { ...state };
     case ACTION.DELETE_VOICE:
-      delete state.servers[action.payload.server].voiceChannels[action.payload.voice];
+      delete state.rooms[action.payload.room].voiceChannels[action.payload.voice];
       return { ...state };
     case ACTION.DELETE_MESSAGE:
-      const adjustedServerArray = deleteServerMessageWithId(state.servers[action.payload.server].channels[action.payload.channel], action.payload.msgId);
+      const adjustedServerArray = deleteServerMessageWithId(state.rooms[action.payload.room].channels[action.payload.channel], action.payload.msgId);
       return {
         ...state,
-        servers: {
-          ...state.servers,
-          [action.payload.server]: {
-            ...state.servers[action.payload.server],
+        rooms: {
+          ...state.rooms,
+          [action.payload.room]: {
+            ...state.rooms[action.payload.room],
             channels: {
-              ...state.servers[action.payload.server].channels,
+              ...state.rooms[action.payload.room].channels,
               [action.payload.channel]: adjustedServerArray
             }
           }

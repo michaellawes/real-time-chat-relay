@@ -80,9 +80,12 @@ export default function ActiveUserList(props: ActiveUserListProps) {
   
   return (
     <div className="user-list-container">
-      {activeView === 'servers' ? 
+      {activeView === 'roomss' ? 
       <List className="users-list">
-        <ListItem className="users-list-title"> Community Members </ListItem>
+        {currentUser.isOwner ? 
+        <ListItem className="users-list-title"> Tenants </ListItem>
+        : 
+        <ListItem className="users-list-title"> Roomates </ListItem>}
         {activeUserList.map((user) => {
           return (
             <ListItem className="user-list-item" key={user.username}>

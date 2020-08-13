@@ -53,18 +53,18 @@ let peerConnectionConfig = {
 const ChannelList = (props: ChannelListProps) => {
   // Get State from Redux Store
   const chatStore = useSelector((state: StoreState) => state.chat);
-  const { activeServer, activeVoice, rtcSignalData, voiceJoinUsername, voiceLeaveUsername, voiceClients, justLeftVoice } = chatStore;
+  const { activeRoom, activeVoice, rtcSignalData, voiceJoinUsername, voiceLeaveUsername, voiceClients, justLeftVoice } = chatStore;
   const user = useSelector((state: StoreState) => state.user);
   const dispatch = useDispatch();
 
   // Handles if channels or voice channels end up being null
   let channels: any = [];
-  if (chatStore.servers[activeServer] !== undefined) {
-    channels = Object.keys(chatStore.servers[activeServer]['channels']);
+  if (chatStore.rooms[activeRoom] !== undefined) {
+    channels = Object.keys(chatStore.rooms[activeRoom]['channels']);
   };
   let voiceChannels: any = []
-  if (chatStore.servers[activeServer] !== undefined) {
-    voiceChannels = Object.keys(chatStore.servers[activeServer]['voiceChannels']);
+  if (chatStore.rooms[activeRoom] !== undefined) {
+    voiceChannels = Object.keys(chatStore.rooms[activeRoom]['voiceChannels']);
   };
 
   // eslint-disable-next-line
@@ -517,8 +517,8 @@ const ChannelList = (props: ChannelListProps) => {
     <div className="channels-container">
       <List className="channel-list">
         <ListItem className="title-container">
-          {activeServer.split('/', 2)[1]}
-          {activeServer !== '' ?
+          {activeRoom.split('/', 2)[1]}
+          {activeRoom !== '' ?
           <React.Fragment>
             <Tooltip title="Community Settings" key="server-settings" placement="right" className="tooltip">
               <IconButton onClick={e => handleSettingsClick(e, serverOptions())}>
@@ -530,7 +530,7 @@ const ChannelList = (props: ChannelListProps) => {
           : null}
         </ListItem>
         {channels.map((channel: string, i: number) => (
-          <Slide direction="right" in={true} timeout={200 * (i + 1)} key={activeServer + channel}>
+          <Slide direction="right" in={true} timeout={200 * (i + 1)} key={activeRoom + channel}>
             <ListItem
               className="channel-item"
               id={`${channel.split('/', 2)[0]}`}
@@ -557,13 +557,13 @@ const ChannelList = (props: ChannelListProps) => {
             </ListItem>
           </Slide>
         ))}
-        {chatStore.servers[activeServer] !== undefined ?
+        {chatStore.rooms[activeRoom] !== undefined ?
           <ListItem className="title-container">
             Voice Channels
           </ListItem> : null
         }
         {voiceChannels.map((voice: any, i: number) => (
-          <Slide direction="right" in={true} timeout={200 * (i + 1)} key={activeServer + voice}>
+          <Slide direction="right" in={true} timeout={200 * (i + 1)} key={activeRoom + voice}>
             <ListItem
               className="channel-item"
               id={`${voice.split('/', 2)[0]}`}
@@ -618,12 +618,12 @@ const ChannelList = (props: ChannelListProps) => {
         onClick={handleClose}
         onClose={handleClose}
       >
-        <MenuItem onClick={() => handleSaveClipboard(activeServer.split('/', 2)[0])}>
+        <MenuItem onClick={() => handleSaveClipboard(activeRoom.split('/', 2)[0])}>
           {' '}
           Copy to Clipboard
         </MenuItem>
-        <MenuItem onClick={() => handleModalShow('server-rename')}>{`Rename ${activeServer.split('/', 2)[1]}`}</MenuItem>
-        <MenuItem onClick={() => handleModalShow('server-delete')}>{`Delete ${activeServer.split('/', 2)[1]}`}</MenuItem>
+        <MenuItem onClick={() => handleModalShow('server-rename')}>{`Rename ${activeRoom.split('/', 2)[1]}`}</MenuItem>
+        <MenuItem onClick={() => handleModalShow('server-delete')}>{`Delete ${activeRoom.split('/', 2)[1]}`}</MenuItem>
         <MenuItem onClick={() => handleModalShow('channel-create')}> Add Channel </MenuItem>
         <MenuItem onClick={() => handleModalShow('voice-create')}> Add Voice Channel </MenuItem>
       </Menu>
@@ -635,13 +635,13 @@ const ChannelList = (props: ChannelListProps) => {
         onClick={handleClose}
         onClose={handleClose}
       >
-        <MenuItem onClick={() => handleSaveClipboard(activeServer.split('/', 2)[0])}>
+        <MenuItem onClick={() => handleSaveClipboard(activeRoom.split('/', 2)[0])}>
           {' '}
           Copy to Clipboard
         </MenuItem>
         <MenuItem onClick={() => handleModalShow('channel-create')}> Add Channel </MenuItem>
         <MenuItem onClick={() => handleModalShow('voice-create')}> Add Voice Channel </MenuItem>
-        <MenuItem onClick={() => handleModalShow('leave-server')}>{`Leave ${activeServer.split('/', 2)[1]}`}</MenuItem>
+        <MenuItem onClick={() => handleModalShow('leave-server')}>{`Leave ${activeRoom.split('/', 2)[1]}`}</MenuItem>
       </Menu>
 
       <Menu
@@ -651,11 +651,11 @@ const ChannelList = (props: ChannelListProps) => {
         onClick={handleClose}
         onClose={handleClose}
       >
-        <MenuItem onClick={() => handleSaveClipboard(activeServer.split('/', 2)[0])}>
+        <MenuItem onClick={() => handleSaveClipboard(activeRoom.split('/', 2)[0])}>
           {' '}
           Copy to Clipboard
         </MenuItem>
-        <MenuItem onClick={() => handleModalShow('leave-server')}>{`Leave ${activeServer.split('/', 2)[1]}`}</MenuItem>
+        <MenuItem onClick={() => handleModalShow('leave-server')}>{`Leave ${activeRoom.split('/', 2)[1]}`}</MenuItem>
       </Menu>
 
       <Menu

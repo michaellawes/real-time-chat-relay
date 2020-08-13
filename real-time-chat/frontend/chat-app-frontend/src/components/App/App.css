@@ -95,7 +95,7 @@ body {
     background: #FAFAFA;
 }
 
-.servers-container {
+.rooms-container {
     display: flex;
     height: 100%;
     box-sizing: border-box;
@@ -107,7 +107,7 @@ body {
     border-right: 1.5px solid #d9dadb;
 }
 
-.server-icon svg {
+.room-icon svg {
     width: 48px;
     height: 48px;
     color: #6E4AB1;
@@ -354,7 +354,7 @@ body {
 }
 
 
-/* ServerCreateModal.jsx */
+/* RoomCreateModal.jsx */
 
 .modal-wrapper {
     display: flex;

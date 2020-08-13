@@ -7,7 +7,7 @@ import { SendMessageData, SendPrivateMessageData } from '../../actions/types';
 
 export default function SendMessage() {
   // Get State from Redux Store
-  const { activeServer, activeChannel, activeView, activePMUser, pms } = useSelector((state: StoreState) => state.chat);
+  const { activeRoom, activeChannel, activeView, activePMUser, pms } = useSelector((state: StoreState) => state.chat);
   const { username } = useSelector((state: StoreState) => state.user);
   const dispatch = useDispatch();
 
@@ -60,7 +60,7 @@ export default function SendMessage() {
       if (activeView === 'servers')
         handleSubmit({
           type: 'channelMessage',
-          server: activeServer,
+          room: activeRoom,
           channel: activeChannel,
           from: username,
           msg: chatMessage,
@@ -86,7 +86,7 @@ export default function SendMessage() {
   // Determines if send message will work
   const canMessage = ():Boolean => {
     if (activeView === 'servers') {
-      if (activeServer !== '') {
+      if (activeRoom !== '') {
         return true;
       } else {
         return false;

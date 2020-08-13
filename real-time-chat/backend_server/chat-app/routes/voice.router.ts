@@ -1,23 +1,22 @@
 export{};
-import { createVoiceChannel, deleteVoiceChannel, rename, userIsOwner } from '../utils/serverUtils';
-import { userExists, userIsAdmin } from '../utils/userUtils';
+const { createVoiceCall, deleteVoiceCall, rename, userIsOwner, userExists, userIsAdmin } = require("../utils");
 
 // Dependencies
 const express = require("express");
 
 let router = express.Router();
 
-// Route to create channel
+// Route to create call
 router.post('/create', async (req, res) => {
   try {
-    const { voiceName, server, username } = req.query;
-    if (!voiceName || !server || !username) {
+    const { name, server, username } = req.query;
+    if (!name || !server || !username) {
       res.status(201).send("Invalid parameters entered");
     } else {
       if (await userExists(username)) {
         if (await userIsAdmin(server.split('/', 2)[0], username) || await userIsOwner(server.split('/', 2)[0], username)) {
-          const response: any = await createVoiceChannel(server.split('/', 2)[0], voiceName);
-          res.status(200).send({ server: server, voice: response + '/' + voiceName });
+          const response: any = await createVoiceCall(server.split('/', 2)[0], name);
+          res.status(200).send({ server: server, voice: response + '/' + name });
         } else {
           res.status(201).send(`${username} is not an admin or owner`);
         };
@@ -30,17 +29,17 @@ router.post('/create', async (req, res) => {
   };
 });
 
-// Route to rename channel
+// Route to rename call
 router.post('/rename', async (req, res) => {
   try {
-    const { voiceName, voiceId, username, server } = req.query;
-    if(!voiceName || !server || !username || !voiceId) {
+    const { name, voiceID, username, room } = req.query;
+    if(!name || !room || !username || !voiceID) {
       res.status(201).send("Invalid parameters entered");
     } else {
       if (await userExists(username)) {
-        if (await userIsAdmin(server.split('/', 2)[0], username) || await userIsOwner(server.split('/', 2)[0], username)) {
-          await rename('voice', server.split('/', 2)[0], voiceName, '', voiceId);
-          res.status(200).send({ server: server, voice: voiceId + '/' + voiceName })
+        if (await userIsAdmin(room.split('/', 2)[0], username) || await userIsOwner(room.split('/', 2)[0], username)) {
+          await rename('voice', room.split('/', 2)[0], name, '', voiceID);
+          res.status(200).send({ room: room, voice: voiceID + '/' + name })
         } else {
           res.status(201).send(`${username} is not an admin or owner`)
         };
@@ -53,16 +52,16 @@ router.post('/rename', async (req, res) => {
   };
 });
 
-// Route to delete voice channel
+// Route to delete voice call
 router.delete('/delete', async (req, res) => {
   try {
-    const { voiceId, serverId, username } = req.query;
-    if (!voiceId || !serverId || !username) {
+    const { voiceID, roomID, username } = req.query;
+    if (!voiceID || !roomID || !username) {
       res.status(201).send("Invalid parameters entered");
     } else {
       if (await userExists(username)) {
-        if (await userIsAdmin(serverId, username) || await userIsOwner(serverId, username)) {
-          await deleteVoiceChannel(serverId, voiceId);
+        if (await userIsAdmin(roomID, username) || await userIsOwner(roomID, username)) {
+          await deleteVoiceCall(roomID, voiceID);
           res.status(200).send();
         } else {
           res.status(201).send(`${username} is not an admin or owner`);

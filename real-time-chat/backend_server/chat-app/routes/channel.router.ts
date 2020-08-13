@@ -1,6 +1,5 @@
 export{};
-import { userIsAdmin, userExists } from '../utils/userUtils';
-import { createChannel, rename, deleteChannel, deleteMessage, userIsOwner } from '../utils/serverUtils';
+const { userIsAdmin, userExists, createChannel, rename, deleteChannel, deleteMessage, userIsOwner } = require("../utils");
 
 // Dependencies
 const express = require("express");
@@ -10,14 +9,14 @@ let router = express.Router();
 // Route to create channel
 router.post('/create', async (req, res) => {
   try {
-    const { channelName, server, username } = req.query;
-    if (!channelName || !server || !username) {
+    const { name, room, username } = req.query;
+    if (!name || !room || !username) {
       res.status(201).send("Invalid parameters entered");
     } else {
       if (await userExists(username)) {
-        if (await userIsAdmin(server.split('/')[0], username) || await userIsOwner(server.split('/', 2)[0], username)) {
-          const response = await createChannel(server.split('/')[0], channelName);
-          res.status(200).send({ server: server, channel: response + '/' + channelName});
+        if (await userIsAdmin(room.split('/')[0], username) || await userIsOwner(room.split('/', 2)[0], username)) {
+          const response = await createChannel(room.split('/')[0], name);
+          res.status(200).send({ server: room, channel: response + '/' + name});
         } else {
           res.status(201).send(`${username} is not an admin or owner`);
         };
@@ -33,14 +32,14 @@ router.post('/create', async (req, res) => {
 // Route to rename channel
 router.post('/rename', async (req, res) => {
   try {
-    const { channelName, channelId, username, server } = req.query;
-    if (!channelName || !server || !username || !channelId) {
+    const { name, channelID, username, server } = req.query;
+    if (!name || !server || !username || !channelID) {
       res.status(201).send("Invalid parameters entered");
     } else {
       if (await userExists(username)) {
         if (await userIsAdmin(server.split('/', 2)[0], username) || await userIsOwner(server.split('/', 2)[0], username)) {
-          await rename('channel', server.split('/', 2)[0], channelName, channelId);
-          res.status(200).send({ server: server, channel: channelId + '/' + channelName });
+          await rename('channel', server.split('/', 2)[0], name, channelID);
+          res.status(200).send({ server: server, channel: channelID + '/' + name });
         } else {
           res.status(201).send(`${username} is not an admin or owner`);
         };
@@ -56,13 +55,13 @@ router.post('/rename', async (req, res) => {
 // Route to delete channel
 router.delete('/delete', async (req, res) => {
   try {
-    const { channelId, serverId, username } = req.query;
-    if (!channelId || !serverId || !username) {
+    const { channelID, roomID, username } = req.query;
+    if (!channelID || !roomID || !username) {
       res.status(201).send("Invalid parameters entered");
     } else {
       if (await userExists(username)) {
-        if (await userIsAdmin(serverId, username) || await userIsOwner(serverId, username)) {
-          await deleteChannel(serverId, channelId);
+        if (await userIsAdmin(roomID, username) || await userIsOwner(roomID, username)) {
+          await deleteChannel(roomID, channelID);
           res.status(200).send();
         } else {
           res.status(201).send(`${username} is not an admin or owner`);
@@ -79,12 +78,12 @@ router.delete('/delete', async (req, res) => {
 // Route to delete server message
 router.delete('/dltmsg', async (req, res) => {
   try {
-    const { msgId, serverId, channelId, username } = req.query;
-    if (!msgId || !serverId || !username || !channelId) {
+    const { msgId, roomID, channelID, username } = req.query;
+    if (!msgId || !roomID || !username || !channelID) {
       res.status(201).send("Invalid parameters entered");
     } else {
       if (await userExists(username)) {
-        await deleteMessage('server', msgId, serverId, channelId);
+        await deleteMessage('server', msgId, roomID, channelID);
         res.status(200).send();
       } else {
         res.status(201).send(`${username} does not exist`);

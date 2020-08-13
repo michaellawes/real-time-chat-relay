@@ -5,25 +5,20 @@ import { getDM } from '../utils/dmUtils';
 const connect = require('../db/db');
 
 // Dependencies
-const ObjectId = require('mongodb').ObjectID;
+const ObjectID = require('mongodb').ObjectID;
 const bcrypt = require('bcryptjs');
 
 // Models
-const User = require("../models/User.model");
-const Admin = require("../models/ThndrAdmins.model");
-const Server = require("../models/ThndrServer.model");
-const Channel = require("../models/ThndrChannel.model");
-const VoiceChannel = require("../models/VoiceChannel.model");
-const ServerMessage = require("../models/ServerMessage.model");
+const { User, Admin, Room, Channel, VoiceCall, ChatMessage } = require('../models');
 
-// Get server list for user
-export const getServerList = async (username: string): Promise<object> => {
+// Get room list for user
+export const getRoomList = async (username: string): Promise<object> => {
   const response = await User
-    .findOne({ username: username }, { _id: 0, serversJoined: 1 })
+    .findOne({ username: username }, { _id: 0, roomsJoined: 1 })
     .catch(err => {
       throw err;
     });
-  return response.serversJoined;
+  return response.roomsJoined;
 };
 
 // Create user
@@ -44,12 +39,12 @@ export const createUser = async (
       name: name,
       bio: '',
       birth: '',
-      avatar: new ObjectId(),
-      cover: new ObjectId(),
+      avatar: new ObjectID(),
+      cover: new ObjectID(),
       lastLogin: new Date(),
-      followerIds: [],
-      followingsIds: [],
-      serversJoined: [],
+      followerIDs: [],
+      followingsIDs: [],
+      roomsJoined: [],
       directMessages: []
     });
     await userCreated.save();
@@ -84,13 +79,13 @@ export const userExists = async (username: string) => {
   };
 };
 
-// Checks is user is admin of server
-export const userIsAdmin = async (serverId: string, username: string) => {
+// Checks is user is admin of room
+export const userIsAdmin = async (roomID: string, username: string) => {
   try {
     return await connect
       .then(async db => {
         return await Admin
-          .findOne({ username: username, serverId: serverId})
+          .findOne({ username: username, roomID: roomID})
           .then(response => {
             if(response === null) {
               return false;
@@ -122,14 +117,14 @@ export const hashPassword = async (password: string) => {
 };
 
 // Update user last active
-export const updateActive = async (username: string, serverId: string) => {
+export const updateActive = async (username: string, roomID: string) => {
   try {
     connect
       .then(async db => {
         await User
           .updateOne(
-            { username: username, "serversJoined.serverId": serverId },
-            { $set: { "serversJoined.$.lastActive": new Date() } }
+            { username: username, "roomsJoined.roomID": roomID },
+            { $set: { "roomsJoined.$.lastActive": new Date() } }
           )
           .catch(err => {
             throw err;
@@ -143,67 +138,67 @@ export const updateActive = async (username: string, serverId: string) => {
   };
 };
 
-// Loads initial server and dm information for user
+// Loads initial room and dm information for user
 export const loadUser = async (username: string): Promise<object> => {
   try {
     return await connect
       .then(async db => {
         const userInfo = await User
-          .findOne({ username: username }, { serversJoined: 1, directMessages: 1, _id: 0 })
+          .findOne({ username: username }, { roomsJoined: 1, directMessages: 1, _id: 0 })
           .catch(err => {
             throw err;
           });
         const data: any = {};
-        for(let i = 0;i < userInfo.serversJoined.length;i++) {
-          const serverId = userInfo.serversJoined[i].serverId;
-          const server: any = await Server
-            .findOne({ serverId: serverId })
+        for(let i = 0;i < userInfo.roomsJoined.length;i++) {
+          const roomID = userInfo.roomsJoined[i].roomID;
+          const room: any = await Room
+            .findOne({ roomID: roomID })
             .catch(err => {
               throw err;
             });
-          const serverConjoined = serverId + '/' + server.serverName;
-          if (data['servers'] === undefined) {
-            data['servers'] = {};
+          const roomConjoined = roomID + '/' + room.name;
+          if (data['rooms'] === undefined) {
+            data['rooms'] = {};
           };
-          if (data['servers'][serverConjoined] === undefined) {
-            data['servers'][serverConjoined] = {};
+          if (data['rooms'][roomConjoined] === undefined) {
+            data['rooms'][roomConjoined] = {};
           };
-          if (data['servers'][serverConjoined]['channels'] === undefined) {
-            data['servers'][serverConjoined]['channels'] = {};
+          if (data['rooms'][roomConjoined]['channels'] === undefined) {
+            data['rooms'][roomConjoined]['channels'] = {};
           };
-          if (data['servers'][serverConjoined]['voiceChannels'] === undefined) {
-            data['servers'][serverConjoined]['voiceChannels'] = {};
+          if (data['rooms'][roomConjoined]['voiceCalls'] === undefined) {
+            data['rooms'][roomConjoined]['voiceCalls'] = {};
           };
           const channelList = await Channel
-            .find({ serverId: serverId }, { channelId: 1, channelName: 1, _id: 0 })
+            .find({ roomID: roomID }, { channelID: 1, name: 1, _id: 0 })
             .catch(err => {
               throw err;
             });
-          const voiceChannelList = await VoiceChannel
-            .find({ serverId: serverId }, { voiceId: 1, voiceName: 1, _id: 0 })
+          const VoiceCallList = await VoiceCall
+            .find({ roomID: roomID }, { voiceID: 1, name: 1, _id: 0 })
             .catch(err => {
               throw err;
             });
           for(let j = 0;j < channelList.length;j++) {
             const channel = channelList[j];
-            const channelId = channel.channelId;
-            const channelConjoined = channelId + '/' + channel.channelName;
+            const channelID = channel.channelID;
+            const channelConjoined = channelID + '/' + channel.name;
 
-            const messages = await ServerMessage
-              .find({ serverId: serverId, channelId: channelId }, { from: 1, msgId: 1, msg: 1, timestamp: 1, _id: 0 })
+            const messages = await ChatMessage
+              .find({ roomID: roomID, channelID: channelID }, { from: 1, msgID: 1, msg: 1, timestamp: 1, _id: 0 })
               .catch(err => {
                 throw err;
               });
             messages.sort((a, b) => { return a.timestamp - b.timestamp });
-            if (data['servers'][serverConjoined]['channels'][channelConjoined] === undefined) {
-              data['servers'][serverConjoined]['channels'][channelConjoined] = messages;
+            if (data['rooms'][roomConjoined]['channels'][channelConjoined] === undefined) {
+              data['rooms'][roomConjoined]['channels'][channelConjoined] = messages;
             };
           }
-          for(let k = 0;k < voiceChannelList.length;k++) {
-            const voiceChannel = voiceChannelList[k];
-            const voiceConjoined = voiceChannel.voiceId + '/' + voiceChannel.voiceName;
-            if (data['servers'][serverConjoined]['voiceChannels'][voiceConjoined] === undefined) {
-              data['servers'][serverConjoined]['voiceChannels'][voiceConjoined] = {};
+          for(let k = 0;k < VoiceCallList.length;k++) {
+            const VoiceCall = VoiceCallList[k];
+            const voiceConjoined = VoiceCall.voiceID + '/' + VoiceCall.name;
+            if (data['rooms'][roomConjoined]['voiceCalls'][voiceConjoined] === undefined) {
+              data['rooms'][roomConjoined]['voiceCalls'][voiceConjoined] = {};
             };
           };
         };

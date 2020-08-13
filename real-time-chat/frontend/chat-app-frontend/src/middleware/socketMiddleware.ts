@@ -14,7 +14,7 @@ export const socketMiddleware = (baseUrl: string) => {
 
       // Send message over socket
       if (action.type === ACTION.SEND_SOCKET_MESSAGE) {
-        socket.emit('server-message', action.payload);
+        socket.emit('chat-message', action.payload);
         return;
       }
 
@@ -33,22 +33,22 @@ export const socketMiddleware = (baseUrl: string) => {
       if(action.type === ACTION.GET_INITIAL_DATA) {
 
         // Get list of server ids (used for "room" names on socket server)
-        let servers = Object.keys(action.payload.servers);
-        let serverIds: string[] = [];
+        let servers = Object.keys(action.payload.rooms);
+        let roomIDs: string[] = [];
         servers.forEach((server, i) => {
-          serverIds[i] = server.split('/', 2)[0];
+          roomIDs[i] = server.split('/', 2)[0];
         });
 
         // Subscribe to each server (Creates a room on socket io)
-        serverIds.forEach(serverId => {
-          socket.emit('subscribe', serverId)
+        roomIDs.forEach(roomID => {
+          socket.emit('subscribe', roomID)
         });
       }
 
       // If user creates a server we need to join that room
-      if (action.type === ACTION.ADD_SERVER) {
-        let serverId = action.payload.server.split('/', 2)[0];
-        socket.emit('subscribe', serverId);
+      if (action.type === ACTION.ADD_ROOM) {
+        let roomID = action.payload.room.split('/', 2)[0];
+        socket.emit('subscribe', roomID);
       }
 
       // Updates our active state on server
@@ -81,7 +81,7 @@ const setupSocketListener = (socket: SocketIOClient.Socket, storeAPI: Middleware
   return socket.on('update', (action: any) => {
 
     // Check for action type
-    if (action.type === 'server-message') {
+    if (action.type === 'chat-message') {
       storeAPI.dispatch({
         type: ACTION.RECEIVE_SOCKET_MESSAGE,
         payload: action.payload

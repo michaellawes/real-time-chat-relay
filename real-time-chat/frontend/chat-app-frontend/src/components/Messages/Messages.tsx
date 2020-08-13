@@ -51,7 +51,7 @@ export default function Messages(props: MessageListProps) {
   // Get States from Redux Store
   const user = useSelector((state: StoreState) => state.user);
   const chatStore = useSelector((state: StoreState) => state.chat);
-  const { activeView, activePMUser, activeServer, activeChannel } = chatStore;
+  const { activeView, activePMUser, activeRoom, activeChannel } = chatStore;
   const dispatch = useDispatch();
 
   // Local states
@@ -73,8 +73,8 @@ export default function Messages(props: MessageListProps) {
   let messages: Message[] = [];
   let messagesLength = 0;
   if (activeView === 'servers') {
-    if (chatStore.servers[activeServer] !== undefined) {
-      messages = chatStore.servers[activeServer].channels[activeChannel];
+    if (chatStore.rooms[activeRoom] !== undefined) {
+      messages = chatStore.rooms[activeRoom].channels[activeChannel];
     };
     if(messages !== undefined) {
       messagesLength = messages.length;

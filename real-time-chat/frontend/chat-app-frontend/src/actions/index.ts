@@ -4,7 +4,7 @@ import { AnyAction } from 'redux';
 import {
   ACTION,
   UpdateActiveStateAction,
-  ChangeServerAction,
+  ChangeRoomAction,
   ChangeChannelAction,
   ChangeVoiceAction,
   ChangeViewAction,
@@ -25,7 +25,7 @@ import {
   ClearVoiceConnectionAction,
   RenameChannelData,
   RenameChannelAction,
-  RenameServerAction,
+  RenameRoomAction,
   RenameVoiceData,
   RenameVoiceAction,
   SendJoinVoiceData,
@@ -35,7 +35,7 @@ import {
   SetCurrentMSGAction,
   SetCurrentUserAction,
   RefreshDataAction,
-  DeleteServerAction,
+  DeleteRoomAction,
   DeleteMessageAction,
   DeletePrivateMessageAction,
   DeleteChannelAction,
@@ -55,7 +55,7 @@ import {
   SendPrivateMessageData,
   ReceivePrivateMessageData,
   AddChannelData,
-  AddServerData,
+  AddRoomData,
   AddVoiceData
 } from './types';
 import {
@@ -64,7 +64,7 @@ import {
   SendPrivateMessageAction,
   ReceivePrivateMessageAction,
   AddChannelAction,
-  AddServerAction,
+  AddRoomAction,
   AddVoiceAction
 } from './types';
 
@@ -81,8 +81,8 @@ export const receiveMessage = (message: ReceiveMessageData): ReceiveMessageActio
   payload: message
 });
 
-// Action to delete server message
-export const deleteServerMessage = (message: DeleteMessageData): DeleteMessageAction => ({
+// Action to delete room message
+export const deleteChatMessage = (message: DeleteMessageData): DeleteMessageAction => ({
   type: ACTION.DELETE_MESSAGE,
   payload: message
 });
@@ -159,25 +159,25 @@ export const adjustJustLeftVoice = (bool: boolean): SetJustLeftVoiceAction => ({
   payload: bool
 });
 
-// Action to add Server to list
-export const addServer = (server: AddServerData): AddServerAction => ({
-  type: ACTION.ADD_SERVER,
-  payload: server
+// Action to add Room to list
+export const addRoom = (room: AddRoomData): AddRoomAction => ({
+  type: ACTION.ADD_ROOM,
+  payload: room
 });
 
-// Action to rename server
-export const renameServer = (server: string): RenameServerAction => ({
-  type: ACTION.RENAME_SERVER,
-  payload: server
+// Action to rename room
+export const renameRoom = (room: string): RenameRoomAction => ({
+  type: ACTION.RENAME_ROOM,
+  payload: room
 });
 
-// Action to delete server
-export const deleteServer = (server: string): DeleteServerAction => ({
-  type: ACTION.DELETE_SERVER,
-  payload: server
+// Action to delete room
+export const deleteRoom = (room: string): DeleteRoomAction => ({
+  type: ACTION.DELETE_ROOM,
+  payload: room
 });
 
-// Action to add Channel to a Server
+// Action to add Channel to a Room
 export const addChannel = (channel: AddChannelData): AddChannelAction => ({
   type: ACTION.ADD_CHANNEL,
   payload: channel
@@ -195,7 +195,7 @@ export const deleteChannel = (channel: DeleteChannelData): DeleteChannelAction =
   payload: channel
 });
 
-// Action to add VoiceChannel to Server
+// Action to add VoiceChannel to Room
 export const addVoice = (voice: AddVoiceData): AddVoiceAction => ({
   type: ACTION.ADD_VOICE,
   payload: voice
@@ -214,39 +214,39 @@ export const deleteVoice = (voice: DeleteVoiceData): DeleteVoiceAction => ({
 });
 
 // Update admin
-export const updateAdmin = (serverId: string, username: string) => async (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
-  const response = await axios.get(`/server/admin?username=${username}&serverId=${serverId}`);
+export const updateAdmin = (roomID: string, username: string) => async (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
+  const response = await axios.get(`/room/admin?username=${username}&roomID=${roomID}`);
   dispatch({ type: ACTION.UPDATE_ADMIN, payload: response.data });
 };
 
 // Update owner
-export const updateOwner = (serverId: string, username: string) => async (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
-  const response = await axios.get(`/server/owner?username=${username}&serverId=${serverId}`);
+export const updateOwner = (roomID: string, username: string) => async (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
+  const response = await axios.get(`/room/owner?username=${username}&roomID=${roomID}`);
   dispatch({ type: ACTION.UPDATE_OWNER, payload: response.data });
 };
 
-// Update priveleges for the current server
-export const updateAccess = (serverId: string, username: string) => async (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
-  dispatch(updateOwner(serverId, username));
-  dispatch(updateAdmin(serverId, username));
+// Update priveleges for the current room
+export const updateAccess = (roomID: string, username: string) => async (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
+  dispatch(updateOwner(roomID, username));
+  dispatch(updateAdmin(roomID, username));
 }
 
-// Get active user list in given server
-export const updateActiveUserList = (serverId: string) => async (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
-  const response = await axios.get(`/server/activeusers?serverId=${serverId}`);
+// Get active user list in given room
+export const updateActiveUserList = (roomID: string) => async (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
+  const response = await axios.get(`/room/activeusers?roomID=${roomID}`);
   dispatch({ type: ACTION.UPDATE_ACTIVE_USERS, payload: response.data });
 };
 
-// Get unactive user list in given server
-export const updateUnactiveUserList = (serverId: string) => async (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
-  const response = await axios.get(`/server/unactiveusers?serverId=${serverId}`);
+// Get unactive user list in given room
+export const updateUnactiveUserList = (roomID: string) => async (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
+  const response = await axios.get(`/room/unactiveusers?roomID=${roomID}`);
   dispatch({ type: ACTION.UPDATE_UNACTIVE_USERS, payload: response.data });
 }
 
 // Update users list entirely
-export const updateUserList = (serverId: string) => (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
-  dispatch(updateActiveUserList(serverId));
-  dispatch(updateUnactiveUserList(serverId));
+export const updateUserList = (roomID: string) => (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
+  dispatch(updateActiveUserList(roomID));
+  dispatch(updateUnactiveUserList(roomID));
 }
 
 // Action creator to update active state (socket middleware)
@@ -261,11 +261,11 @@ export const changeView = (view: string): ChangeViewAction => ({
   payload: view
 });
 
-// Action to change the current Active Server
-export const changeServer = (server: string, username: string) => (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
-  dispatch(updateUserList(server.split('/', 2)[0]));
-  dispatch<ChangeServerAction>({ type: ACTION.CHANGE_SERVER, payload: server });
-  dispatch(updateAccess(server.split('/', 2)[0], username));
+// Action to change the current Active Room
+export const changeRoom = (room: string, username: string) => (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
+  dispatch(updateUserList(room.split('/', 2)[0]));
+  dispatch<ChangeRoomAction>({ type: ACTION.CHANGE_ROOM, payload: room });
+  dispatch(updateAccess(room.split('/', 2)[0], username));
 };
 
 // Action to change the current Active Channel
@@ -310,14 +310,14 @@ export const setCurrentMSG = (msgId: string): SetCurrentMSGAction => ({
   payload: msgId
 });
 
-// Loads user Data. Gets all Servers + Channel History
+// Loads user Data. Gets all Rooms + Channel History
 export const loadUserData = (username: string) => async (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
   if (username !== '') {
     let url = `/user/data?username=${username}`;
     const res = await axios.get<LoadInitialData>(url);
-    if(res.data.servers !== null && res.data.servers !== undefined) {
-      dispatch(updateAccess(Object.keys(res.data.servers)[0].split('/', 2)[0], username));
-      dispatch(updateUserList(Object.keys(res.data.servers)[0].split('/', 2)[0]));
+    if(res.data.rooms !== null && res.data.rooms !== undefined) {
+      dispatch(updateAccess(Object.keys(res.data.rooms)[0].split('/', 2)[0], username));
+      dispatch(updateUserList(Object.keys(res.data.rooms)[0].split('/', 2)[0]));
       dispatch<LoadUserDataAction>({ type: ACTION.GET_INITIAL_DATA, payload: res.data });
     }
   }
@@ -326,14 +326,14 @@ export const loadUserData = (username: string) => async (dispatch: ThunkDispatch
 // Refreshes data 
 export const refreshData = (
   username: string,
-  activeServer: string
+  activeRoom: string
   ) => async (dispatch: ThunkDispatch<{}, {}, AnyAction>) => {
-    if (username !== '' && activeServer !== '') {
+    if (username !== '' && activeRoom !== '') {
       let url = `/user/data?username=${username}`;
       const res: any = await axios.get<LoadInitialData>(url);
-      if(res.data.servers !== undefined) {
-        dispatch(updateAccess(activeServer.split('/', 2)[0], username));
-        dispatch(updateUserList(activeServer.split('/', 2)[0]));
+      if(res.data.rooms !== undefined) {
+        dispatch(updateAccess(activeRoom.split('/', 2)[0], username));
+        dispatch(updateUserList(activeRoom.split('/', 2)[0]));
         dispatch<RefreshDataAction>({ type: ACTION.REFRESH_DATA, payload: res.data });
       }
     }

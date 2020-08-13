@@ -1,25 +1,24 @@
 export{};
-import { createServer, joinServer, rename, userIsOwner, deleteServer, getActiveUsers, makeAdmin, leaveServer, removeAdmin, changeOwner, getUnactiveUsers } from '../utils/serverUtils';
-import { userExists, userIsAdmin } from '../utils/userUtils';
+const { createRoom, joinRoom, rename, userIsOwner, deleteRoom, getActiveUsers, makeAdmin, leaveRoom, removeAdmin, changeOwner, getUnactiveUsers, userExists, userIsAdmin } = require("../utils");
 
 // Dependencies
 const express = require("express");
 
 let router = express.Router();
 
-// Route to create a server
+// Route to create a room
 router.post('/create', async(req, res) => {
   try {
-    const { serverName, username } = req.query;
-    if (!serverName || !username) {
+    const { name, username } = req.query;
+    if (!name || !username) {
       res.status(201).send('Invalid parameters entered');
     } else {
       if (await userExists(username)) {
-        let newServer: any = await createServer(username, serverName);
+        let newRoom: any = await createRoom(username, name);
         res.status(200).send({ 
-          server: newServer.serverId + '-' + serverName,
-          channel: newServer.channelId + '-' + "General",
-          voice: newServer.voiceId + '-' + "General",
+          room: newRoom.roomID + '-' + name,
+          channel: newRoom.channelID + '-' + "General",
+          voice: newRoom.voiceId + '-' + "General",
         });
       } else {
         res.status(201).send(`${username} does not exist`);
@@ -30,15 +29,15 @@ router.post('/create', async(req, res) => {
   };
 });
 
-// Route to join a server
+// Route to join a room
 router.post('/join', async (req, res) => {
   try {
-    const { serverId, username } = req.query;
-    if (!serverId || !username) {
+    const { roomID, username } = req.query;
+    if (!roomID || !username) {
       res.status(201).send("Invalid parameters entered");
     } else {
       if (await userExists(username)) {
-        await joinServer(serverId, username);
+        await joinRoom(roomID, username);
         res.status(200).send(`${username} joined community`);
       } else {
         res.status(201).send(`${username} does not exist`);
@@ -49,15 +48,15 @@ router.post('/join', async (req, res) => {
   };
 });
 
-// Route to leave a server
+// Route to leave a room
 router.delete('/leave', async (req, res) => {
   try {
-    const { serverId, username } = req.query;
-    if (!serverId || !username) {
+    const { roomID, username } = req.query;
+    if (!roomID || !username) {
       res.status(201).send("Invalid parameters entered");
     } else {
       if (await userExists(username)) {
-        await leaveServer(serverId, username);
+        await leaveRoom(roomID, username);
         res.status(200).send(`${username} left community`);
       } else {
         res.status(201).send(`${username} does not exist`);
@@ -68,16 +67,16 @@ router.delete('/leave', async (req, res) => {
   };
 });
 
-// Route to rename a server
+// Route to rename a room
 router.post('/rename', async (req, res) => {
   try {
-    const { serverName, serverId, username } = req.query;
-    if(!serverName || !serverId || !username) {
+    const { name, roomID, username } = req.query;
+    if(!name || !roomID || !username) {
       res.status(201).send("Invalid parameters entered");
     } else {
-      if (await userIsOwner(serverId, username)) {
-        await rename('server', serverId, serverName);
-        res.status(200).send(`${serverId}/${serverName}`);
+      if (await userIsOwner(roomID, username)) {
+        await rename('room', roomID, name);
+        res.status(200).send(`${roomID}/${name}`);
       } else {
         res.status(201).send(`${username} is not an owner`);
       };
@@ -87,15 +86,15 @@ router.post('/rename', async (req, res) => {
   };
 });
 
-// Route to delete a server
+// Route to delete a room
 router.delete('/delete', async (req, res) => {
   try{
-    const { serverId, username } = req.query;
-    if (!serverId || !username) {
+    const { roomID, username } = req.query;
+    if (!roomID || !username) {
       res.status(201).send("Invalid parameters entered");
     } else {
-      if (await userIsOwner(serverId, username)) {
-        await deleteServer(serverId);
+      if (await userIsOwner(roomID, username)) {
+        await deleteRoom(roomID);
         res.status(200).send();
       } else {
         res.status(201).send(`${username} is not an owner`)
@@ -109,11 +108,11 @@ router.delete('/delete', async (req, res) => {
 // Route to get if user is owner
 router.get('/owner', async (req, res) => {
   try {
-    const { username, serverId } = req.query;
-    if (!username || !serverId) {
+    const { username, roomID } = req.query;
+    if (!username || !roomID) {
       res.status(400).send("Invalid parameters entered");
     } else {
-      const response = await userIsOwner(serverId, username);
+      const response = await userIsOwner(roomID, username);
       res.send(response);
     };
   } catch(err) {
@@ -124,11 +123,11 @@ router.get('/owner', async (req, res) => {
 // Route to get if user is admin
 router.get('/admin', async (req, res) => {
   try {
-    const { username, serverId } = req.query;
-    if (!username || !serverId) {
+    const { username, roomID } = req.query;
+    if (!username || !roomID) {
       res.status(201).send("Invalid parameters entered");
     } else {
-      const response = await userIsAdmin(serverId, username);
+      const response = await userIsAdmin(roomID, username);
       res.send(response);
     };
   } catch(err) {
@@ -139,14 +138,14 @@ router.get('/admin', async (req, res) => {
 // Route to make user admin
 router.post('/promote', async (req, res) => {
   try {
-    const { username, serverId } = req.query;
-    if (!username || !serverId) {
+    const { username, roomID } = req.query;
+    if (!username || !roomID) {
       res.status(201).send("Invalid parameters entered");
     } else {
-      if (await userIsAdmin(serverId, username)) {
+      if (await userIsAdmin(roomID, username)) {
         res.status(201).send(`${username} is already an admin`)
       } else {
-        await makeAdmin(serverId, username);
+        await makeAdmin(roomID, username);
         res.status(200).send(`${username} promoted to admin`);
       };
     };
@@ -158,12 +157,12 @@ router.post('/promote', async (req, res) => {
 // Route to demote user from admin
 router.post('/demote', async (req, res) => {
   try {
-    const { username, serverId } = req.query;
-    if (!username || !serverId) {
+    const { username, roomID } = req.query;
+    if (!username || !roomID) {
       res.status(201).send("Invalid parameters entered");
     } else {
-      if (await userIsAdmin(serverId, username)) {
-        await removeAdmin(serverId, username);
+      if (await userIsAdmin(roomID, username)) {
+        await removeAdmin(roomID, username);
         res.status(200).send(`${username} is no longer an admin`);
       } else {
         res.status(201).send(`${username} is not an admin`);
@@ -177,14 +176,14 @@ router.post('/demote', async (req, res) => {
 // Route to change owner of server 
 router.post('/change', async (req, res) => {
   try {
-    const { owner, user, serverId } = req.query;
-    if (!owner || !user || !serverId) {
+    const { owner, user, roomID } = req.query;
+    if (!owner || !user || !roomID) {
       res.status(201).send("Invalid parameters entered");
     } else {
       if (await userExists(owner)) {
-        if (await userIsOwner(serverId, owner)) {
+        if (await userIsOwner(roomID, owner)) {
           if (await userExists(user)) {
-            await changeOwner(serverId, user);
+            await changeOwner(roomID, user);
             res.status(200).send(`${user} is the new owner`);
           } else {
             res.status(201).send(`${user} does not exist`)
@@ -204,11 +203,11 @@ router.post('/change', async (req, res) => {
 // Route to remove user from server
 router.post('/remove', async (req, res) => {
   try {
-    const { username, serverId } = req.query;
-    if (!username || !serverId) {
+    const { username, roomID } = req.query;
+    if (!username || !roomID) {
       res.status(201).send("Invalid parameters entered");
     } else {
-      await leaveServer(serverId, username);
+      await leaveRoom(roomID, username);
       res.status(200).send(`${username} removed from server`);
     };
   } catch(err) {
@@ -219,11 +218,11 @@ router.post('/remove', async (req, res) => {
 // Route to get active users list
 router.get('/activeusers', async(req, res) => {
   try {
-    const { serverId } = req.query;
-    if (!serverId) {
+    const { roomID } = req.query;
+    if (!roomID) {
       res.status(400).send("Invalid parameters entered");
     } else {
-      const response = await getActiveUsers(serverId);
+      const response = await getActiveUsers(roomID);
       res.send(response);
     };
   } catch(err) {
@@ -234,11 +233,11 @@ router.get('/activeusers', async(req, res) => {
 // Route to get unactive users list
 router.get('/unactiveusers', async (req, res) => {
   try {
-    const { serverId } = req.query;
-    if (!serverId) {
+    const { roomID } = req.query;
+    if (!roomID) {
       res.status(400).send("Invalid parameters entered");
     } else {
-      const response = await getUnactiveUsers(serverId);
+      const response = await getUnactiveUsers(roomID);
       res.send(response);
     }
   } catch(err) {

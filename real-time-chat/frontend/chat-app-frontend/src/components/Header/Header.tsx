@@ -20,7 +20,7 @@ export default function Header() {
   // Get State from Redux Store
   const chatStore = useSelector((state: StoreState) => state.chat);
   const user = useSelector((state: StoreState) => state.user);
-  const { activeChannel, activePMUser, activeView, activeServer } = chatStore;
+  const { activeChannel, activePMUser, activeView, activeRoom } = chatStore;
   const dispatch = useDispatch();
 
   // Local state
@@ -38,7 +38,7 @@ export default function Header() {
       setModalVisible(false);
       setSnackVisible(true);
       setSnackContent(response);
-      if (pass) dispatch(refreshData(user.username, activeServer));
+      if (pass) dispatch(refreshData(user.username, activeRoom));
     }
   };
 

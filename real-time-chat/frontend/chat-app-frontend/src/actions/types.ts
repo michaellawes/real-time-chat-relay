@@ -9,21 +9,21 @@ export enum ACTION {
   SEND_SOCKET_JOIN_VOICE,
   SEND_SOCKET_RTC_SIGNAL,
   SEND_SOCKET_LEAVE_VOICE,
-  ADD_SERVER,
+  ADD_ROOM,
   ADD_CHANNEL,
   ADD_VOICE,
   ADD_PRIVATE_MESSAGE,
-  RENAME_SERVER,
+  RENAME_ROOM,
   RENAME_CHANNEL,
   RENAME_VOICE,
-  DELETE_SERVER,
+  DELETE_ROOM,
   DELETE_CHANNEL,
   DELETE_VOICE,
   DELETE_MESSAGE,
   DELETE_PRIVATE_MESSAGE,
   CHANGE_VOICE,
   CHANGE_CHANNEL,
-  CHANGE_SERVER,
+  CHANGE_ROOM,
   CHANGE_VIEW,
   CHANGE_PM_USER,
   CLEAR_VOICE_CONNECTION,
@@ -52,17 +52,17 @@ export type ChatActionTypes =
   | ReceiveLeaveVoiceAction
   | ClearVoiceConnectionAction
   | AddChannelAction
-  | AddServerAction
+  | AddRoomAction
   | AddVoiceAction
-  | RenameServerAction
+  | RenameRoomAction
   | RenameChannelAction
   | RenameVoiceAction
-  | DeleteServerAction
+  | DeleteRoomAction
   | DeleteChannelAction
   | DeleteVoiceAction
   | DeleteMessageAction
   | DeletePrivateMessageAction
-  | ChangeServerAction
+  | ChangeRoomAction
   | ChangeChannelAction
   | ChangeVoiceAction
   | ChangeViewAction
@@ -83,7 +83,7 @@ export type SocketActions =
   | SendPrivateMessageAction
   | SignInAction
   | LoadUserDataAction
-  | AddServerAction
+  | AddRoomAction
   | UpdateActiveStateAction
   | SendJoinVoiceAction
   | SendRtcSignalAction
@@ -171,18 +171,18 @@ export type SetJustLeftVoiceAction = {
   payload: boolean
 };
 
-export type AddServerAction = {
-  type: ACTION.ADD_SERVER;
-  payload: AddServerData;
+export type AddRoomAction = {
+  type: ACTION.ADD_ROOM;
+  payload: AddRoomData;
 };
 
-export type RenameServerAction = {
-  type: ACTION.RENAME_SERVER;
+export type RenameRoomAction = {
+  type: ACTION.RENAME_ROOM;
   payload: string;
 };
 
-export type DeleteServerAction = {
-  type: ACTION.DELETE_SERVER;
+export type DeleteRoomAction = {
+  type: ACTION.DELETE_ROOM;
   payload: string;
 };
 
@@ -246,8 +246,8 @@ export type ChangeViewAction = {
   payload: string;
 };
 
-export type ChangeServerAction = {
-  type: ACTION.CHANGE_SERVER;
+export type ChangeRoomAction = {
+  type: ACTION.CHANGE_ROOM;
   payload: string;
 };
 
@@ -310,7 +310,7 @@ export type SignOutAction = {
 
 export interface SendMessageData {
   type: 'channelMessage';
-  server: string;
+  room: string;
   channel: string;
   from: string;
   msg: string;
@@ -327,7 +327,7 @@ export interface SendPrivateMessageData {
 };
 
 export interface ReceiveMessageData {
-  server: string;
+  room: string;
   channel: string;
   from: string;
   msgId: string;
@@ -375,44 +375,44 @@ export interface ReceiveRtcSignalData {
   username: string;
 };
 
-export interface AddServerData {
-  server: string;
+export interface AddRoomData {
+  room: string;
   channel: string;
   voice: string;
 };
 
 export interface AddChannelData {
-  server: string;
+  room: string;
   channel: string;
 };
 
 export interface RenameChannelData {
-  server: string;
+  room: string;
   channel: string;
 };
 
 export interface DeleteChannelData {
-  server: string;
+  room: string;
   channel: string;
 };
 
 export interface AddVoiceData {
-  server: string;
+  room: string;
   voice: string;
 };
 
 export interface RenameVoiceData {
-  server: string;
+  room: string;
   voice: string;
 };
 
 export interface DeleteVoiceData {
-  server: string;
+  room: string;
   voice: string;
 };
 
 export interface DeleteMessageData {
-  server: string;
+  room: string;
   channel: string;
   msgId: string;
 };
@@ -423,8 +423,8 @@ export interface DeletePrivateMessageData {
 };
 
 export interface LoadInitialData {
-  servers: {
-    [serverConjoined: string]: {
+  rooms: {
+    [roomConjoined: string]: {
       channels: {
         [channelConjoined: string]: { from: string; msgId: string; msg: string; timestamp: Date }[]; 
       };
@@ -439,8 +439,8 @@ export interface LoadInitialData {
 };
 
 export interface RefreshData {
-  servers: {
-    [serverConjoined: string]: {
+  rooms: {
+    [roomConjoined: string]: {
       channels: {
         [channelConjoined: string]: { from: string; msgId: string; msg: string; timestamp: Date }[];
       };
@@ -452,7 +452,7 @@ export interface RefreshData {
   pms: {
     [userPM: string]: { from: string; userTo: string; msg: string; msgId: string; timestamp: Date; }[]
   };
-  activeServer: string;
+  activeRoom: string;
   activeChannel: string;
 };
 

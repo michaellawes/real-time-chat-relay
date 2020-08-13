@@ -2,12 +2,12 @@ export {};
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const ServerMessage = new Schema({
-  serverId: {
+const ChatMessage = new Schema({
+  roomID: {
     type: String,
     required: true
   },
-  channelId: {
+  channelID: {
     type: String,
     required: true
   },
@@ -29,4 +29,4 @@ const ServerMessage = new Schema({
   }
 });
 
-module.exports = mongoose.model("ServerMessage", ServerMessage, 'ServerMessages');
+module.exports = mongoose.model("ChatMessage", ChatMessage, 'ChatMessages');

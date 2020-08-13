@@ -5,13 +5,8 @@ import { userIsAdmin } from "./userUtils";
 const connect = require('../db/db');
 
 // Models
-const ServerMessage = require("../models/ServerMessage.model");
-const Channel = require("../models/ThndrChannel.model");
-const Server = require("../models/ThndrServer.model");
-const User = require("../models/User.model");
-const Admin = require("../models/ThndrAdmins.model");
-const DirectMessage = require('../models/DirectMessages.model');
-const VoiceChannel = require("../models/VoiceChannel.model");
+const { ChatMessage, Channel, Room, User, Admin, DirectMessage, VoiceCall } = require('../models');
+
 
 const generateId = (): string => {
   return ("" + 1e7 + -1e3 + -4e3 + -8e3 + -1e11).replace(/1|0/g, function () {
@@ -19,11 +14,11 @@ const generateId = (): string => {
   });
 };
 
-// Gets unique Id for server or channel or message
+// Gets unique Id for room or channel or message
 export const getUniqueId = async(
   type: string,
-  serverId?: string,
-  channelId?: string,
+  roomID?: string,
+  channelID?: string,
   userId1?: string,
   userId2?: string
 ): Promise<string> => {
@@ -31,8 +26,8 @@ export const getUniqueId = async(
     const newId = generateId();
     return await connect
     .then(async db => {
-      if (type === "server") {
-        return await Server.findOne({ serverId: newId })
+      if (type === "room") {
+        return await Room.findOne({ id: newId })
           .then(async (response) => {
             if (response === null) {
               return newId;
@@ -44,22 +39,22 @@ export const getUniqueId = async(
             throw err;
           });
       } else if (type === "channel") {
-        return await Channel.findOne({ serverId: serverId, channelId: newId })
+        return await Channel.findOne({ roomID: roomID, channelID: newId })
           .then(async (response) => {
             if (response === null) {
               return newId;
             } else {
-              return await getUniqueId(type, serverId);
+              return await getUniqueId(type, roomID);
             };
           })
           .catch((err) => {
             throw err;
           });
-      } else if (type === "server-message") {
-        const response = await ServerMessage
+      } else if (type === "chat-message") {
+        const response = await ChatMessage
           .findOne({
-            serverId: serverId,
-            channelId: channelId,
+            roomID: roomID,
+            channelID: channelID,
             msgId: newId,
           })
           .catch((err) => {
@@ -68,15 +63,15 @@ export const getUniqueId = async(
         if (response === null) {
           return newId;
         } else {
-          return await getUniqueId(type, serverId, channelId);
+          return await getUniqueId(type, roomID, channelID);
         };
       } else if (type === "voice") {
-        return await VoiceChannel.findOne({ serverId: serverId, voiceId: newId })
+        return await VoiceCall.findOne({ roomID: roomID, voiceId: newId })
           .then(async (response) => {
             if (response === null) {
               return newId;
             } else {
-              return await getUniqueId(type, serverId);
+              return await getUniqueId(type, roomID);
             };
           })
           .catch((err) => {
@@ -108,30 +103,30 @@ export const getUniqueId = async(
   };
 };
 
-// Insert message into either server or private message
+// Insert message into either room or private message
 export const insertMessage = async (msg: any): Promise<object> => {
   try {
     return await connect
       .then(async (db) => {
-        if (msg.type === "server") {
-          const msgId = await getUniqueId("server-message", msg.server.split('/', 2)[0], msg.channel.split('/', 2)[0]);
+        if (msg.type === "room") {
+          const msgId = await getUniqueId("chat-message", msg.room.split('/', 2)[0], msg.channel.split('/', 2)[0]);
           const message = {
-            server: msg.server,
+            room: msg.room,
             channel: msg.channel,
             from: msg.from,
             msg: msg.msg,
             msgId: msgId,
             timestamp: msg.timestamp,
           };
-          const serverMessage = new ServerMessage({
-            serverId: msg.server.split('/')[0],
-            channelId: msg.channel.split('/')[0],
+          const chatMessage = new ChatMessage({
+            roomID: msg.room.split('/')[0],
+            channelID: msg.channel.split('/')[0],
             from: msg.from,
             msg: msg.msg,
             msgId: msgId,
             timestamp: msg.timestamp
           });
-          await serverMessage
+          await chatMessage
             .save()
             .catch((err) => {
               throw err;
@@ -175,23 +170,23 @@ export const insertMessage = async (msg: any): Promise<object> => {
   };
 };
 
-// Deletes message from either server or direct message
+// Deletes message from either room or direct message
 export const deleteMessage = async(
   type: string,
   msgId: string,
-  serverId?: string,
-  channelId?: string,
+  roomID?: string,
+  channelID?: string,
   from?: string,
   userTo?: string,
 ) => {
   try {
     connect
       .then(async (db) => {
-        if (type === "server") {
-          await ServerMessage
+        if (type === "room") {
+          await ChatMessage
             .deleteOne({
-              serverId: serverId,
-              channelId: channelId,
+              roomID: roomID,
+              channelID: channelID,
               msgId: msgId,
             })
             .catch((err) => {
@@ -216,9 +211,9 @@ export const deleteMessage = async(
   };
 };
 
-// Adds user to server
-export const joinServer = async (
-  serverId: string,
+// Adds user to room
+export const joinRoom = async (
+  roomID: string,
   username: string
 ) => {
   try {
@@ -228,8 +223,8 @@ export const joinServer = async (
         { username: username },
         {
           $push: {
-            serversJoined: {
-              serverId: serverId,
+            roomsJoined: {
+              roomID: roomID,
               lastActive: new Date(),
             },
           },
@@ -243,28 +238,28 @@ export const joinServer = async (
   };
 };
 
-// Creates server
-export const createServer = async (
+// Creates room
+export const createRoom = async (
   username: string,
-  serverName: string
+  name: string
 ): Promise<object> => {
   try {
     await connect;
-    const serverId = await getUniqueId("server");
-    const server = new Server({
-      serverId: serverId,
-      serverName: serverName,
-      ownerId: username,
+    const roomID = await getUniqueId("room");
+    const room = new Room({
+      roomID: roomID,
+      name: name,
+      owner: username,
     });
-    await server.save();
-    const newChannel = await createChannel(serverId, "General");
-    const newVoice = await createVoiceChannel(serverId, "General");
+    await room.save();
+    const newChannel = await createChannel(roomID, "General");
+    const newVoice = await createVoiceCall(roomID, "General");
     await User
       .findOneAndUpdate(
         { username: username },
         { 
-          $push: { serversJoined: {
-            serverId: serverId,
+          $push: { roomsJoined: {
+            roomID: roomID,
             lastActive: new Date()
             } 
           }
@@ -274,8 +269,8 @@ export const createServer = async (
         throw err;
       });
     return {
-      serverId: serverId,
-      channelId: newChannel,
+      roomID: roomID,
+      channelID: newChannel,
       voiceId: newVoice,
     };
   } catch (err) {
@@ -283,23 +278,23 @@ export const createServer = async (
   };
 };
 
-// Leave server
-export const leaveServer = async(
-  serverId: string,
+// Leave room
+export const leaveRoom = async(
+  roomID: string,
   username: string,
 ) => {
   try {
     await connect;
     await User
           .updateOne(
-            { "serversJoined.serverId": serverId, username: username },
-            { $pull: { serversJoined: { serverId: serverId }  } }
+            { "roomsJoined.roomID": roomID, username: username },
+            { $pull: { roomsJoined: { roomID: roomID }  } }
           )
           .catch((err) => {
             throw err;
           });
-    if (await userIsAdmin(serverId, username)) {
-      await removeAdmin(serverId, username);
+    if (await userIsAdmin(roomID, username)) {
+      await removeAdmin(roomID, username);
     };
   } catch(err) {
     throw err;
@@ -308,54 +303,54 @@ export const leaveServer = async(
 
 // Creates channel 
 export const createChannel = async(
-  serverId: string,
-  channelName: string
+  roomID: string,
+  name: string
 ): Promise<string> => {
   try {
     await connect;
-    const channelId = await getUniqueId("channel", serverId);
+    const channelID = await getUniqueId("channel", roomID);
     const channel = new Channel({
-      serverId: serverId,
-      channelId: channelId,
-      channelName: channelName,
+      roomID: roomID,
+      channelID: channelID,
+      name: name,
     });
     await channel.save();
-    return channelId;
+    return channelID;
   } catch (err) {
     throw err;
   };
 };
 
 // Creates voice channel
-export const createVoiceChannel = async(
-  serverId: string,
-  voiceName: string
+export const createVoiceCall = async(
+  roomID: string,
+  name: string
 ): Promise<string> => {
   try {
     await connect;
-    const voiceId = await getUniqueId("voice", serverId);
-    const voiceChannel = new VoiceChannel({
-      serverId: serverId,
+    const voiceId = await getUniqueId("voice", roomID);
+    const voiceCall = new VoiceCall({
+      roomID: roomID,
       voiceId: voiceId,
-      voiceName: voiceName,
+      name: name,
     });
-    await voiceChannel.save();
+    await voiceCall.save();
     return voiceId;
   } catch (err) {
     throw err;
   };
 };
 
-// Makes user admin of server
+// Makes user admin of room
 export const makeAdmin = async(
-  serverId: string,
+  roomID: string,
   username: string
 ) => {
   try {
     await connect
       .then(async (db) => {
         const newAdmin = new Admin({
-          serverId: serverId,
+          roomID: roomID,
           username: username,
         });
         await newAdmin
@@ -373,12 +368,12 @@ export const makeAdmin = async(
 };
 
 // Removes admin status from user
-export const removeAdmin = async (serverId: string, username: string) => {
+export const removeAdmin = async (roomID: string, username: string) => {
   try {
     await connect
       .then(async (db) => {
         await Admin
-          .deleteOne({ serverId: serverId, username: username })
+          .deleteOne({ roomID: roomID, username: username })
           .catch(err => { 
             throw err; 
           });
@@ -392,16 +387,16 @@ export const removeAdmin = async (serverId: string, username: string) => {
 };
 
 // Gets current display name
-export const getServerName = async (serverId: string): Promise<string> => {
+export const getRoomName = async (roomID: string): Promise<string> => {
   try {
     return await connect
       .then(async (db) => {
-        const server = await Server
-          .findOne({ serverId: serverId }, { serverName: 1, _id: 0 })
+        const room = await Room
+          .findOne({ roomID: roomID }, { name: 1, _id: 0 })
           .catch((err) => {
             throw err;
           });
-        return server.serverName;
+        return room.name;
       })
       .catch((err) => {
         throw err;
@@ -412,7 +407,7 @@ export const getServerName = async (serverId: string): Promise<string> => {
 };
 
 // Get active List
-export const getActiveUsers = async (serverId: string): Promise<object> => {
+export const getActiveUsers = async (roomID: string): Promise<object> => {
   try {
     return await connect
       .then(async (db) => {
@@ -421,8 +416,8 @@ export const getActiveUsers = async (serverId: string): Promise<object> => {
         const UsersThatApply = await User
           .find({
             $and: [
-                { "serversJoined.serverId": serverId },
-                { "serversJoined.lastActive": { $gt: now } },
+                { "roomsJoined.roomID": roomID },
+                { "roomsJoined.lastActive": { $gt: now } },
               ],
           }, { _id: 0, username: 1 })
           .catch((err) => {
@@ -439,7 +434,7 @@ export const getActiveUsers = async (serverId: string): Promise<object> => {
 };
 
 // Get unactive user list
-export const getUnactiveUsers = async (serverId: string): Promise<object> => {
+export const getUnactiveUsers = async (roomID: string): Promise<object> => {
   try {
     return await connect
       .then(async (db) => {
@@ -448,8 +443,8 @@ export const getUnactiveUsers = async (serverId: string): Promise<object> => {
         const UsersThatApply = await User
           .find({
             $and: [
-                { "serversJoined.serverId": serverId },
-                { "serversJoined.lastActive": { $lt: now } },
+                { "roomsJoined.roomID": roomID },
+                { "roomsJoined.lastActive": { $lt: now } },
               ],
           }, { _id: 0, username: 1 })
           .catch((err) => {
@@ -465,48 +460,48 @@ export const getUnactiveUsers = async (serverId: string): Promise<object> => {
   };
 };
 
-// Delete server
-export const deleteServer = async (serverId: string) => {
+// Delete room
+export const deleteRoom = async (roomID: string) => {
   try {
     connect
       .then(async (db) => {
         await User
           .updateMany(
-            { "serversJoined.serverId": serverId },
-            { $pull: { serversJoined: { serverId: serverId }  } }
+            { "roomsJoined.roomID": roomID },
+            { $pull: { roomsJoined: { roomID: roomID }  } }
           )
           .catch((err) => {
             throw err;
           });
         await Admin
-          .deleteMany({ serverId: serverId })
+          .deleteMany({ roomID: roomID })
           .catch((err) => {
             throw err;
           });
         const channelInventory = await Channel
-          .find({ serverId: serverId }, { _id: 0, channelId: 1 })
+          .find({ roomID: roomID }, { _id: 0, channelID: 1 })
           .catch((err) => {
             throw err;
           });
         for (var i = 0; i < channelInventory.length; i++) {
-          await ServerMessage
-            .deleteMany({ channelId: channelInventory[i].channelId })
+          await ChatMessage
+            .deleteMany({ channelID: channelInventory[i].channelID })
             .catch((err) => {
               throw err;
             });
         };
-        await VoiceChannel
-          .deleteMany({ serverId: serverId })
+        await VoiceCall
+          .deleteMany({ roomID: roomID })
           .catch((err) => {
             throw err;
           });
         await Channel
-          .deleteMany({ serverId: serverId })
+          .deleteMany({ roomID: roomID })
           .catch((err) => {
             throw err;
           });
-        await Server
-          .deleteOne({ serverId: serverId })
+        await Room
+          .deleteOne({ roomID: roomID })
           .catch((err) => {
             throw err;
           });
@@ -520,17 +515,17 @@ export const deleteServer = async (serverId: string) => {
 };
 
 // Deletes channel
-export const deleteChannel = async (serverId: string, channelId: string) => {
+export const deleteChannel = async (roomID: string, channelID: string) => {
   try {
     connect
       .then(async (db) => {
-        await ServerMessage
-          .deleteMany({ channelId: channelId })
+        await ChatMessage
+          .deleteMany({ channelID: channelID })
           .catch((err) => {
             throw err;
           });
         await Channel
-          .deleteOne({ serverId: serverId, channelId: channelId })
+          .deleteOne({ roomID: roomID, channelID: channelID })
           .catch((err) => {
           throw err;
         });
@@ -544,12 +539,12 @@ export const deleteChannel = async (serverId: string, channelId: string) => {
 };
 
 // Delete voice channel
-export const deleteVoiceChannel = async (serverId: string, voiceId: string) => {
+export const deleteVoiceCall = async (roomID: string, voiceId: string) => {
   try {
     connect
       .then(async (db) => {
-        await VoiceChannel
-          .deleteOne({ serverId: serverId, voiceId: voiceId })
+        await VoiceCall
+          .deleteOne({ roomID: roomID, voiceId: voiceId })
           .catch(err => {
             throw err;
           });
@@ -563,28 +558,28 @@ export const deleteVoiceChannel = async (serverId: string, voiceId: string) => {
 };
 
 // Rename channel
-export const rename = async (type: string, serverId: string, name: string, channelId?: string, voiceId?: string) => {
+export const rename = async (type: string, roomID: string, name: string, channelID?: string, voiceId?: string) => {
   try {
     connect
       .then(async (db) => {
-        if (type === "server") {
-          await Server.findOneAndUpdate(
-            { serverId: serverId },
-            { $set: { serverName: name } }
+        if (type === "room") {
+          await Room.findOneAndUpdate(
+            { roomID: roomID },
+            { $set: { name: name } }
           ).catch((err) => {
             throw err;
           });
         } else if (type === "channel") {
           await Channel.findOneAndUpdate(
-            { serverId: serverId, channelId: channelId },
-            { $set: { channelName: name } }
+            { roomID: roomID, channelID: channelID },
+            { $set: { name: name } }
           ).catch((err) => {
             throw err;
           });
         } else {
-          await VoiceChannel.findOneAndUpdate(
-            { serverId: serverId, voiceId: voiceId },
-            { $set: { voiceName: name } }
+          await VoiceCall.findOneAndUpdate(
+            { roomID: roomID, voiceId: voiceId },
+            { $set: { name: name } }
           ).catch((err) => {
             throw err;
           });
@@ -598,14 +593,14 @@ export const rename = async (type: string, serverId: string, name: string, chann
   };
 };
 
-// Change server owner
-export const changeOwner = async (serverId: string, username: string) => {
+// Change room owner
+export const changeOwner = async (roomID: string, username: string) => {
   try {
     connect
       .then(async db => {
-        await Server
+        await Room
           .findOneAndUpdate(
-            { serverId: serverId },
+            { roomID: roomID },
             { $set: { ownerId: username } }
           ).catch((err) => {
             throw err;
@@ -614,21 +609,21 @@ export const changeOwner = async (serverId: string, username: string) => {
         .catch((err) => {
           throw err;
         });
-        if (await userIsAdmin(serverId, username)) {
-          await removeAdmin(serverId, username)
+        if (await userIsAdmin(roomID, username)) {
+          await removeAdmin(roomID, username)
         };
   } catch (err) {
     throw err;
   };
 };
 
-// Checks if user is owner of a server
-export const userIsOwner = async (serverId: string, username: string) => {
+// Checks if user is owner of a room
+export const userIsOwner = async (roomID: string, username: string) => {
   try {
     return await connect
       .then(async db => {
-        return await Server
-          .findOne({ serverId: serverId, ownerId: username })
+        return await Room
+          .findOne({ roomID: roomID, ownerId: username })
           .then(response => {
             if(response === null) {
               return false;

@@ -1,9 +1,9 @@
 export {};
-const mongoose = require("mongoose");
-const bcryptjs = require("bcryptjs");
-const Schema = mongoose.Schema;
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+import isEmail from 'validator/lib/isEmail';
 
-const User = new Schema({
+const User = new mongoose.Schema({
   username: {
     type: String,
     unique: true,
@@ -13,6 +13,7 @@ const User = new Schema({
     type: String,
     unique: true,
     required: true,
+    validate: [isEmail, 'No valid email address provided.']
   },
   password: {
     type: String,
@@ -20,49 +21,12 @@ const User = new Schema({
     minlength: 7,
     maxlength: 60
   },
-  role: {
-    type: String,
-    required: false,
-  },
-  name: {
-    type: String,
-    required: true
-  },
-  bio: {
-    type: String,
-    required: false,
-    maxlength: 150,
-  },
-  birth: {
-    type: String,
-    required: false,
-  },
-  avatar: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    required: false,
-    ref: 'File' 
-  },
-  cover: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    required: false,
-    ref: 'File' 
-  },
   lastLogin: {
     type: Date,
     required: false,
   },
-  followerIds: [{
-    type: mongoose.Schema.Types.ObjectId,
-    required: false,
-    ref: 'User'
-  }],
-  followingIds: [{
-    type: mongoose.Schema.Types.ObjectId,
-    required: false,
-    ref: 'User'
-  }],
-  serversJoined: [{
-    serverId: {
+  roomsJoined: [{
+    roomID: {
       type: String,
       required: true
     },
@@ -73,5 +37,12 @@ const User = new Schema({
   }],
   directMessages: [String]
 });
+
+User.methods.comparePassword = (candidatePassword: string, cb: any) => {
+  bcrypt.compare(candidatePassword, this.password, (err: any, isMatch: boolean) => {
+    if (err) return cb(err);
+    cb(null, isMatch);
+  })
+}
 
 module.exports = mongoose.model('User', User, 'users');

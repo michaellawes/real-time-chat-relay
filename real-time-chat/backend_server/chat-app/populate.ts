@@ -1,8 +1,5 @@
 export {};
 
-import { loadUser, userIsAdmin, userExists, updateActive, getServerList, createUser } from './utils/userUtils';
-import { getActiveUsers, insertMessage, deleteServer, userIsOwner, createServer, deleteMessage, getUnactiveUsers } from './utils/serverUtils';
-import { startDM, getDM } from './utils/dmUtils';
 const connect = require("./db/db");
 const Admin = require('./models/ThndrAdmins.model');
 const ServerMessage = require('./models/ServerMessage.model');

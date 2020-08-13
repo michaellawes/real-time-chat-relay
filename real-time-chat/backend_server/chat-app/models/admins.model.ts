@@ -2,8 +2,8 @@ export { };
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const ThndrAdmin = new Schema({
-  serverId: {
+const Admin = new Schema({
+  roomID: {
     type: String,
     required: true
   },
@@ -13,4 +13,4 @@ const ThndrAdmin = new Schema({
   }
 });
 
-module.exports = mongoose.model('ThndrAdmin', ThndrAdmin, 'ThndrAdmins');
+module.exports = mongoose.model('Admin', Admin, 'Admins');

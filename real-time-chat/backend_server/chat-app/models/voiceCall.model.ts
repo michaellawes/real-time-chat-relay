@@ -2,19 +2,19 @@ export { };
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const VoiceChannel = new Schema({
-  serverId: {
+const VoiceCall = new Schema({
+  roomID: {
     type: String,
     required: true
   },
-  voiceId: {
+  voiceID: {
     type: String,
     required: true,
   },
-  voiceName: {
+  name: {
     type: String,
     required: true,
   }
 });
 
-module.exports = mongoose.model('VoiceChannel', VoiceChannel, 'VoiceChannels');
+module.exports = mongoose.model('VoiceCall', VoiceCall, 'VoiceCalls');

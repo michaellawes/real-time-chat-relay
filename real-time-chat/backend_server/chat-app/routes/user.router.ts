@@ -1,6 +1,5 @@
 export {};
-import  { loadUser, userExists, createUser, hashPassword } from "../utils/userUtils";
-import { deleteMessage } from '../utils/serverUtils';
+const { loadUser, userExists, createUser, deleteMessage } = require("../utils");
 // Connection dependencies
 const connect = require('../db/db');
 const express = require("express");

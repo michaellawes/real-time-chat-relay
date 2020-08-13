@@ -1,12 +1,11 @@
 export{};
 import { SocketAction, Message, PrivateMessage, SocketClientList } from './types/types';
-import { insertMessage } from './utils/serverUtils';
-import { updateActive, getServerList } from './utils/userUtils';
-import { dmExists, startDM } from './utils/dmUtils';
+const { insertMessage, updateActive, getRoomList, dmExists, startDM } = require('./utils');
+
 
 // Routes
 const userRouter = require('./routes/user.router');
-const serverRouter = require('./routes/server.router');
+const roomRouter = require('./routes/room.router');
 const channelRouter = require('./routes/channel.router');
 const voiceRouter = require('./routes/voice.router');
 
@@ -29,7 +28,7 @@ const io = require("socket.io")(server);
 
 const main = async () => {
   let clients: SocketClientList[] = [];
-  // Create socket Server listener
+  // Create socket Room listener
   io.on('connection', (socket) => {
     let sessionUserId: string = '';
     let action: SocketAction;
@@ -38,32 +37,32 @@ const main = async () => {
     socket.on('sign-in', async (data: { username: string; }) => {
       sessionUserId = data.username;
       clients.push({ username: sessionUserId, id: socket.id })
-      const servers: any = await getServerList(sessionUserId);
-      for(let i = 0;i < servers.length;i++) {
-        const object: any = servers[i];
-        await updateActive(sessionUserId, object.serverId);
+      const rooms: any = await getRoomList(sessionUserId);
+      for(let i = 0;i < rooms.length;i++) {
+        const object: any = rooms[i];
+        await updateActive(sessionUserId, object.roomID);
       }
     });
 
-    // Listens for subscribing to servers (socket io rooms)
-    socket.on('subscribe', (serverId: string) => {
-      socket.join(serverId);
+    // Listens for subscribing to rooms (socket io rooms)
+    socket.on('subscribe', (roomId: string) => {
+      socket.join(roomId);
     })
 
     // On ping update active status of current user (Client sends every 5 minutes)
     socket.on('update-active', async () => {
-      const servers: any = await getServerList(sessionUserId);
-      for(let i = 0;i < servers.length;i++) {
-        await updateActive(sessionUserId, servers[i].serverId);
+      const rooms: any = await getRoomList(sessionUserId);
+      for(let i = 0;i < rooms.length;i++) {
+        await updateActive(sessionUserId, rooms[i].roomID);
       }
     })
 
     // Listens for new messages
-    socket.on('server-message', async (msg: Message) => {
-      const serverId = msg.server.split('/', 2)[0];
+    socket.on('chat-message', async (msg: Message) => {
+      const roomID = msg.room.split('/', 2)[0];
       const message = await insertMessage({
-        type: 'server',
-        server: msg.server,
+        type: 'room',
+        room: msg.room,
         channel: msg.channel,
         from: msg.from,
         msg: msg.msg,
@@ -71,10 +70,10 @@ const main = async () => {
       });
 
       // Format our action for client to parse
-      action = { type: 'server-message', payload: message };
+      action = { type: 'chat-message', payload: message };
 
-      //Emit the message to everyone that joined that server
-      io.to(serverId).emit('update', action);
+      //Emit the message to everyone that joined that room
+      io.to(roomID).emit('update', action);
     });
 
     // Listens for private messages
@@ -242,7 +241,7 @@ const main = async () => {
 
   // Middleware for routes
   app.use('/user', userRouter);
-  app.use('/server', serverRouter);
+  app.use('/room', roomRouter);
   app.use('/channel', channelRouter);
   app.use('/voice', voiceRouter);
 

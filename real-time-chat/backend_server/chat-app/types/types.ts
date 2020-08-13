@@ -10,7 +10,7 @@ export interface SocketAction {
 
 export interface Message {
   type: 'channelMessage';
-  server: string;
+  room: string;
   channel: string;
   from: string;
   msg: string;

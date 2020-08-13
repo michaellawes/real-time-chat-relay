@@ -2,19 +2,19 @@ export { };
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const ThndrServer = new Schema({
-  serverId: {
+const Room = new Schema({
+  roomID: {
     type: String,
     required: true,
   },
-  serverName: {
+  name: {
     type: String,
     required: true,
   },
-  ownerId: {
+  owner: {
     type: String,
     required: true,
   },
 });
 
-module.exports = mongoose.model('ThndrServer', ThndrServer, 'ThndrServers');
+module.exports = mongoose.model('Room', Room, 'Rooms');
